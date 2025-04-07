@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { UtilityService } from './shared/utility/utility.service';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -16,13 +18,15 @@ import { UsersModule } from './users/users.module';
       username: 'root',
       password: '',
       database: 'fx_trading_app',
-      entities: [],
+      autoLoadEntities: true,
       synchronize: true,
     }),
     AuthModule,
     UsersModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, UtilityService],
 })
-export class AppModule {}
+export class AppModule {
+  constructor(private dataSource: DataSource) {}
+}

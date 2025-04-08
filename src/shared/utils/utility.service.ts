@@ -2,11 +2,14 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class UtilityService {
+  private readonly exchangeRateBaseUrl: string =
+    'https://api.exchangerate-api.com/v4/latest';
+
   private fxRatesCache: {
     rates: Record<string, number>;
     timestamp: number;
   } | null = null;
-  private cacheDuration = 10 * 60 * 1000; // Cache duration: 10 minutes
+  private cacheDuration = 10 * 60 * 1000;
 
   async fetchExchangeRates(
     baseCurrency: string = 'USD',
@@ -14,7 +17,6 @@ export class UtilityService {
   ): Promise<Record<string, number> | number> {
     const now = Date.now();
 
-    // Return cached rates if they are still valid
     if (
       this.fxRatesCache &&
       now - this.fxRatesCache.timestamp < this.cacheDuration
@@ -25,14 +27,15 @@ export class UtilityService {
       return this.fxRatesCache.rates;
     }
 
-    // Fetch new rates from the external API
-    const response = await fetch(
-      `https://api.exchangerate-api.com/v4/latest/${baseCurrency}`,
-    );
+    const response = await fetch(`${this.exchangeRateBaseUrl}/${baseCurrency}`);
     if (!response.ok) {
       throw new Error('Failed to fetch FX rates');
     }
-    const data = await response.json();
+    interface ExchangeRateResponse {
+      rates: Record<string, number>;
+      [key: string]: unknown;
+    }
+    const data = (await response.json()) as ExchangeRateResponse;
 
     // Cache the fetched rates
     this.fxRatesCache = {

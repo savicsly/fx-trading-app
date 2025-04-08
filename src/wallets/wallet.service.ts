@@ -32,13 +32,7 @@ export class WalletService {
     private readonly dataSource: DataSource,
     @InjectRedis() private readonly redisClient: Redis,
     private readonly utilityService: UtilityService,
-  ) {
-    this.currencyApiUrl =
-      this.configService.getOrThrow<string>('OPEN_EXCHANGE_URL');
-    this.currencyApiKey = this.configService.getOrThrow<string>(
-      'OPEN_EXCHANGE_API_KEY',
-    );
-  }
+  ) {}
 
   async createWallet(user: User): Promise<Wallet> {
     const wallet = this.walletRepository.create({
@@ -57,7 +51,6 @@ export class WalletService {
       throw new NotFoundException('Wallet not found');
     }
 
-    // Return only the balances
     return wallet.balances;
   }
 
@@ -67,6 +60,7 @@ export class WalletService {
   ): Promise<Record<string, number>> {
     const wallet = await this.walletRepository.findOne({
       where: { user: { id: userId } },
+      relations: ['user'],
     });
 
     if (!wallet) {
@@ -76,7 +70,6 @@ export class WalletService {
     wallet.balances[data.currency] =
       (wallet.balances[data.currency] || 0) + data.amount;
 
-    // Record the transaction
     await this.transactionService.recordTransaction({
       userId: wallet.user.id,
       type: 'fund',
@@ -90,13 +83,11 @@ export class WalletService {
       `Wallet funded: User ID ${userId}, Currency ${data.currency}, Amount ${data.amount}`,
     );
 
-    // Log analytics
     await this.analyticsService.logUserActivity(
       userId,
       `Funded wallet with ${data.amount} ${data.currency}`,
     );
 
-    // Return only the balances
     return wallet.balances;
   }
 
@@ -185,17 +176,5 @@ export class WalletService {
     userId: number,
   ): Promise<Record<string, number>> {
     return this.processCurrencyTransaction(data, userId, 'trade');
-  }
-
-  async getTransactionHistory(
-    userId: number,
-    options: { limit?: number; offset?: number },
-  ) {
-    const { limit = 10, offset = 0 } = options;
-    // Replace the following with actual database query logic
-    return [
-      { id: 1, type: 'fund', amount: 1000, currency: 'NGN', userId },
-      { id: 2, type: 'convert', amount: 500, currency: 'USD', userId },
-    ].slice(offset, offset + limit);
   }
 }

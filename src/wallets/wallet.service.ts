@@ -2,12 +2,15 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { HttpService } from '@nestjs/axios';
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Redis } from 'ioredis';
+import { lastValueFrom } from 'rxjs';
 import { AnalyticsService } from 'src/shared/analytics/analytics.service';
 import { UtilityService } from 'src/shared/utils/utility.service';
 import { TransactionService } from 'src/transactions/transaction.service';
@@ -187,15 +190,101 @@ export class WalletService {
     return this.processCurrencyTransaction(data, userId, 'trade');
   }
 
-  async getTransactionHistory(
+  private async initiateFlutterwavePayment(
+    amount: number,
     userId: number,
-    options: { limit?: number; offset?: number },
-  ) {
-    const { limit = 10, offset = 0 } = options;
-    // Replace the following with actual database query logic
-    return [
-      { id: 1, type: 'fund', amount: 1000, currency: 'NGN', userId },
-      { id: 2, type: 'convert', amount: 500, currency: 'USD', userId },
-    ].slice(offset, offset + limit);
+  ): Promise<{ data: { link: string } }> {
+    const flutterwaveUrl =
+      this.configService.getOrThrow<string>('FLUTTERWAVE_URL');
+    const flutterwaveApiKey = this.configService.getOrThrow<string>(
+      'FLUTTERWAVE_API_KEY',
+    );
+
+    const payload = {
+      tx_ref: `tx-${userId}-${Date.now()}`,
+      amount,
+      currency: 'NGN',
+      redirect_url: 'https://your-redirect-url.com',
+      customer: {
+        id: userId,
+        email: `user${userId}@example.com`,
+      },
+    };
+
+    try {
+      const response = await lastValueFrom(
+        this.httpService.post(flutterwaveUrl, payload, {
+          headers: {
+            Authorization: `Bearer ${flutterwaveApiKey}`,
+            'Content-Type': 'application/json',
+          },
+        }),
+      );
+
+      if (response.status !== HttpStatus.OK.valueOf()) {
+        throw new HttpException(
+          'Failed to initiate payment',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('Flutterwave payment initiation failed:', error);
+      throw new HttpException(
+        'Payment initiation failed',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async fundWalletViaFlutterwave(
+    data: fundWalletDto,
+    userId: number,
+  ): Promise<{ paymentLink: string }> {
+    if (data.currency !== 'NGN') {
+      throw new BadRequestException('Only NGN wallet can be funded directly.');
+    }
+
+    const paymentResponse: { data: { link: string } } =
+      await this.initiateFlutterwavePayment(data.amount, userId);
+
+    // Return the payment link to the client
+    return { paymentLink: paymentResponse.data.link };
+  }
+
+  async handleFlutterwaveWebhook(payload: any): Promise<void> {
+    const { tx_ref, status, amount, currency } = payload;
+
+    if (status !== 'successful' || currency !== 'NGN') {
+      console.error('Invalid or failed transaction:', payload);
+      throw new BadRequestException('Invalid or failed transaction');
+    }
+
+    const userId = parseInt(tx_ref.split('-')[1], 10); // Extract userId from tx_ref
+    const wallet = await this.walletRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!wallet) {
+      throw new NotFoundException('Wallet not found');
+    }
+
+    wallet.balances['NGN'] = (wallet.balances['NGN'] || 0) + amount;
+
+    // Record the transaction
+    await this.transactionService.recordTransaction({
+      userId,
+      type: 'fund',
+      currency: 'NGN',
+      amount,
+      status: 'success',
+    });
+
+    await this.walletRepository.save(wallet);
+
+    console.log(
+      `Wallet funded via Flutterwave: User ID ${userId}, Amount ${amount} NGN`,
+    );
   }
 }

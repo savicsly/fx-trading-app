@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -53,5 +61,23 @@ export class WalletController {
   ) {
     const response = this.walletService.tradeCurrency(data, userId);
     return response;
+  }
+
+  @Post('fund/flutterwave')
+  @ApiOperation({ summary: 'Fund wallet via Flutterwave' })
+  @ApiResponse({ status: 201, description: 'Returns payment link for funding' })
+  async fundWalletViaFlutterwave(
+    @Body() data: fundWalletDto,
+    @AuthUserID() userId: number,
+  ) {
+    return this.walletService.fundWalletViaFlutterwave(data, userId);
+  }
+
+  @Post('webhook/flutterwave')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Handle Flutterwave webhook' })
+  @ApiResponse({ status: 200, description: 'Webhook processed successfully' })
+  async handleFlutterwaveWebhook(@Body() payload: any) {
+    await this.walletService.handleFlutterwaveWebhook(payload);
   }
 }

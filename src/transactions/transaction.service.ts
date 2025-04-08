@@ -20,8 +20,8 @@ export class TransactionService {
     targetCurrency?: string;
     status?: string;
   }): Promise<Transaction> {
-    if (!data.userId || !data.userId) {
-      throw new TypeError('Invalid user object: user or user.id is undefined');
+    if (!data.userId) {
+      throw new TypeError('Invalid user object: user.id is undefined');
     }
 
     const transaction = this.transactionRepository.create({

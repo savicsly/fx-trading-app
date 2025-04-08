@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty } from 'class-validator';
+import { dummyToken } from 'src/shared/constants';
 import { User } from 'src/users/user.entity';
 
 export class SignInDto {
@@ -16,7 +17,7 @@ export class SignInDto {
 
 export class SignInResponse {
   @ApiProperty({
-    example: 'dummyToken',
+    example: dummyToken,
     description: 'Login token',
   })
   token: string;

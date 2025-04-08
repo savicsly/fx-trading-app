@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { OtpModule } from 'src/otps/otp.module'; // Import OtpModule
+import { UtilityService } from 'src/shared/utility/utility.service';
 import { User } from 'src/users/user.entity';
 import { UsersService } from 'src/users/users.service';
 import { AuthController } from './auth.controller';
@@ -11,6 +13,7 @@ import { AuthService } from './auth.service';
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([User]),
+    OtpModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -20,7 +23,7 @@ import { AuthService } from './auth.service';
       }),
     }),
   ],
-  providers: [AuthService, UsersService],
+  providers: [AuthService, UsersService, UtilityService],
   controllers: [AuthController],
 })
 export class AuthModule {}

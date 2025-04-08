@@ -3,22 +3,22 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
+  Ip,
   Post,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PublicResource } from 'src/shared/decorator/public-resource.decorator';
 import { AuthService } from './auth.service';
-import { SignInDto } from './dto/sign-in.dto';
+import { SignInDto, SignInResponse } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 
 @ApiBearerAuth()
 @ApiTags('auth')
-@ApiResponse({
-  status: HttpStatus.UNAUTHORIZED,
-  description: 'Unauthorized',
-})
+// @ApiResponse({
+//   status: HttpStatus.UNAUTHORIZED,
+//   description: 'Unauthorized',
+// })
 // @UseGuards(AuthGuard)
 @Controller('auth')
 export class AuthController {
@@ -27,15 +27,19 @@ export class AuthController {
   @PublicResource()
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  @UsePipes(new ValidationPipe({ whitelist: true }))
-  signIn(@Body() loginDTO: SignInDto) {
-    return this.authService.signIn(loginDTO);
+  @ApiResponse({
+    status: 200,
+    description: 'Authentication data',
+    type: SignInResponse,
+  })
+  signIn(@Body() loginDTO: SignInDto, @Ip() ip: string) {
+    const response = this.authService.signIn(loginDTO, ip);
+    return response;
   }
 
   @PublicResource()
   @HttpCode(HttpStatus.OK)
   @Post('register')
-  @UsePipes(new ValidationPipe({ whitelist: true }))
   signUp(@Body() registerDTO: SignUpDto) {
     return this.authService.signUp(registerDTO);
   }
@@ -52,11 +56,11 @@ export class AuthController {
   //   return this.authService.logout(logoutDTO);
   // }
 
-  // @HttpCode(HttpStatus.OK)
-  // @Post('verify')
-  // verify(@Body() verifyDTO: Record<string, any>) {
-  //   return this.authService.verify(verifyDTO);
-  // }
+  @HttpCode(HttpStatus.OK)
+  @Post('verify')
+  async verifyEmail(@Body() data: VerifyEmailDto) {
+    return this.authService.verifyEmail(data);
+  }
 
   // @HttpCode(HttpStatus.OK)
   // @Post('forgot-password')

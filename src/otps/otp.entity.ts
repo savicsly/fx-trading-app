@@ -1,33 +1,18 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity('users')
-export class User {
+@Entity('otps')
+export class Otp {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ nullable: false })
-  firstName: string;
+  userId: number;
 
   @Column({ nullable: false })
-  lastName: string;
-
-  @Column({ unique: true })
-  email: string;
-
-  @Column({ unique: true })
-  phoneNumber: string;
-
-  @Column()
-  password: string;
+  code: number;
 
   @Column({ type: 'timestamp', nullable: true })
-  emailVerifiedAt: Date;
-
-  @Column({ type: 'timestamp', nullable: true })
-  lastLoginAt: Date;
-
-  @Column({ nullable: true })
-  lastLoginIp: string;
+  expiresAt: Date;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;

@@ -89,6 +89,9 @@ export class AuthService {
 
     try {
       const otp = await this.otpService.validateOtp(data.code);
+      if (!otp) {
+        throw new UnauthorizedException('Invalid or expired token');
+      }
       await this.usersService.updateEmailVerifiedAt(Number(otp.userId));
     } catch {
       throw new UnauthorizedException('Invalid or expired token');

@@ -30,7 +30,11 @@ export class UsersService {
   }
 
   async findOne(id: number): Promise<User | null> {
-    return await this.usersRepository.findOneBy({ id });
+    const user = await this.usersRepository.findOneBy({ id });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 
   async findOneByEmail(email: string): Promise<User | null> {
@@ -45,7 +49,11 @@ export class UsersService {
 
     await this.usersRepository.update(id, data);
 
-    return user;
+    const updatedUser = await this.usersRepository.findOneBy({ id });
+    if (!updatedUser) {
+      throw new NotFoundException('User not found');
+    }
+    return updatedUser;
   }
 
   async updateEmailVerifiedAt(id: number): Promise<User> {

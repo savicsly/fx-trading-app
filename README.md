@@ -2,7 +2,7 @@
 
 ## Overview
 
-The FX Trading App is a financial application that allows users to manage wallets, perform currency conversions, and trade currencies. It integrates with external APIs to fetch real-time exchange rates and provides secure endpoints for user authentication and wallet operations.
+The FX Trading App is a financial application that allows users to manage wallets, perform currency conversions, and trade currencies. It integrates with external APIs to fetch real-time exchange rates and provides secure endpoints for user authentication and wallet operations. A technical assessment for CredPal Backend Developer.
 
 ---
 
@@ -31,15 +31,7 @@ The FX Trading App is a financial application that allows users to manage wallet
    ```
 
 3. Configure environment variables:
-   Create a `.env` file in the root directory and add the following:
-
-   ```env
-   DATABASE_URL=postgres://username:password@localhost:5432/fx_trading
-   REDIS_URL=redis://localhost:6379
-   OPEN_EXCHANGE_URL=https://api.exchangerate-api.com/v4/latest
-   OPEN_EXCHANGE_API_KEY=your_api_key
-   JWT_SECRET=your_jwt_secret
-   ```
+   Rename the `.env.sample` file in the root directory to .env and add the appropriate values:
 
 4. Run database migrations:
 

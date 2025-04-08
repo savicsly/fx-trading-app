@@ -1,4 +1,12 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Transaction } from 'src/transactions/transaction.entity';
+import { Wallet } from 'src/wallets/wallet.entity';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity('users')
 export class User {
@@ -38,4 +46,13 @@ export class User {
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updatedAt: Date;
+
+  @OneToOne(() => Wallet, (wallet) => wallet.user)
+  wallet: Wallet;
+
+  @OneToMany(() => Wallet, (wallet) => wallet.user)
+  wallets: Wallet[];
+
+  @OneToMany(() => Transaction, (transaction) => transaction.user)
+  transactions: Transaction[];
 }

@@ -4,7 +4,9 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import * as sgMail from '@sendgrid/mail';
 import * as bcrypt from 'bcrypt';
 import { OtpService } from 'src/otps/otp.service';
 import { UtilityService } from 'src/shared/utility/utility.service';
@@ -14,12 +16,16 @@ import { SignUpDto } from './dto/sign-up.dto';
 
 @Injectable()
 export class AuthService {
+  private sendGridApiKey: string;
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
     private utilityService: UtilityService,
     private otpService: OtpService,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.sendGridApiKey = configService.getOrThrow<string>('SENDGRID_API_KEY');
+  }
 
   async signIn(data: SignInDto, ip: string): Promise<{ access_token: string }> {
     const user = await this.usersService.findOneByEmail(data.email);
@@ -64,8 +70,23 @@ export class AuthService {
         throw new BadRequestException('Failed to create OTP');
       }
 
-      // Send OTP to user's email
+      sgMail.setApiKey(this.sendGridApiKey);
+      const msg = {
+        to: user.email, // Change to your recipient
+        from: 'victor@etechdynamics.com', // Change to your verified sender
+        subject: 'Your OTP Code',
+        text: `Your OTP code is ${otp.code}. It will expire in 5 minutes.`,
+        html: `<strong>Your OTP code is ${otp.code}. It will expire in 5 minutes.</strong>`,
+      };
 
+      try {
+        await sgMail.send(msg);
+        console.log(`OTP email sent to ${user.email}`);
+      } catch (error) {
+        console.error(`Failed to send OTP email to ${user.email}:`, error);
+      }
+
+      console.log(`User registered successfully: ${user.email}`);
       return {
         message: 'User registered successfully',
         user: {
@@ -77,7 +98,7 @@ export class AuthService {
         },
       };
     } catch (error) {
-      console.error('Error creating user:', error);
+      console.error('Error during user registration:', error);
       throw new BadRequestException('Failed to register user');
     }
   }
@@ -88,12 +109,20 @@ export class AuthService {
     }
 
     try {
-      const otp = await this.otpService.validateOtp(data.code);
-      if (!otp) {
+      const otpData = await this.otpService.validateOtp(data.code);
+
+      if (!otpData) {
+        throw new NotFoundException('Invalid or expired token');
+      }
+
+      if (otpData && otpData.userId) {
+        await this.usersService.updateEmailVerifiedAt(Number(otpData.userId));
+        console.log(`Email verified for user ID: ${otpData.userId}`);
+      } else {
         throw new UnauthorizedException('Invalid or expired token');
       }
-      await this.usersService.updateEmailVerifiedAt(Number(otp.userId));
-    } catch {
+    } catch (error) {
+      console.error('Error during email verification:', error);
       throw new UnauthorizedException('Invalid or expired token');
     }
 

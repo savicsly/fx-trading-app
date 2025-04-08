@@ -61,7 +61,7 @@ The FX Trading App is a financial application that allows users to manage wallet
 3. **Authentication**:
 
    - JWT-based authentication is used to secure endpoints.
-   - Public endpoints (e.g., `/auth/login`, `/auth/register`) do not require authentication.
+   - Public endpoints (e.g., `/auth/login`, `/auth/register`, `/auth/resend-otp`) do not require authentication.
 
 4. **Transactions**:
    - All transactions (funding, conversion, trading) are recorded in the database for auditing purposes.
@@ -111,7 +111,88 @@ The FX Trading App is a financial application that allows users to manage wallet
 
 ---
 
-## Architectural Design
+### Transactions
+
+- **Get /transactions
+  Get a list of transactions.
+  **Request Body**: `{ userId }`
+  **Response\*\*: `{ type: string, currency: string, ... }`
+
+### Architectural Design
+
+The FX Trading App is designed with a modular architecture to ensure scalability, maintainability, and separation of concerns. Below is an overview of the key architectural principles and components:
+
+#### Key Principles
+
+1. **Modularity**:
+
+   - The application is divided into distinct modules, each responsible for a specific domain (e.g., Authentication, Wallet, FX Rates).
+
+2. **Separation of Concerns**:
+
+   - Controllers handle HTTP requests and responses.
+   - Services encapsulate business logic.
+   - Repositories interact with the database.
+
+3. **Scalability**:
+
+   - The architecture supports horizontal scaling by decoupling components and using Redis for caching.
+
+4. **Security**:
+   - JWT-based authentication ensures secure access to protected endpoints.
+   - Sensitive data (e.g., passwords) is hashed before storage.
+
+#### Component Interaction
+
+1. **Controllers**:
+
+   - Receive HTTP requests and delegate tasks to services.
+   - Example: `AuthController` handles user login and registration.
+
+2. **Services**:
+
+   - Contain the core business logic.
+   - Example: `WalletService` manages wallet operations like funding and currency conversion.
+
+3. **Repositories**:
+
+   - Use TypeORM to interact with the PostgreSQL database.
+   - Example: `TransactionRepository` handles CRUD operations for transactions.
+
+4. **External Integrations**:
+
+   - The app integrates with external APIs for real-time exchange rates.
+   - Example: `FxService` fetches and caches exchange rates.
+
+5. **Caching**:
+
+   - Redis is used to cache exchange rates and reduce API calls.
+
+6. **Database**:
+   - PostgreSQL stores user, wallet, and transaction data.
+   - Database migrations ensure schema consistency.
+
+#### Data Flow
+
+1. **Authentication**:
+
+   - Users authenticate via `/auth/login` to receive a JWT token.
+   - The token is validated for subsequent requests to protected endpoints.
+
+2. **Wallet Operations**:
+
+   - Users can fund their wallets, convert currencies, and trade currencies.
+   - Transactions are logged for auditing and reporting.
+
+3. **FX Rates**:
+
+   - Exchange rates are fetched from an external API and cached for 10 minutes.
+   - Rates are used for currency conversion and trading.
+
+4. **Transaction Logging**:
+   - All wallet operations are recorded in the database for traceability.
+
+This architecture ensures that the FX Trading App is robust, secure, and easy to extend as new features are added.
 
 ### Key Components
 
@@ -138,28 +219,6 @@ The FX Trading App is a financial application that allows users to manage wallet
 5. **Utility Services**:
    - Provide reusable functionality (e.g., fetching exchange rates with caching).
 
-### Data Flow
-
-1. **Authentication**:
-
-   - Users authenticate via `/auth/login` to receive a JWT token.
-   - Protected endpoints require the token for access.
-
-2. **Wallet Operations**:
-
-   - Users can fund their wallets, convert currencies, and trade currencies.
-   - Transactions are recorded in the database.
-
-3. **FX Rates**:
-
-   - Exchange rates are fetched from an external API and cached for 10 minutes.
-
-4. **Database**:
-   - PostgreSQL is used to store user, wallet, and transaction data.
-   - Redis is used for caching.
-
----
-
 ## Running Tests
 
 Run unit tests:
@@ -175,7 +234,3 @@ npm run test:e2e
 ```
 
 ---
-
-## License
-
-This project is licensed under the MIT License.

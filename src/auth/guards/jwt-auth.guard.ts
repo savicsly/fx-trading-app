@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
 import { META_PUBLIC_RESOURCE } from 'src/shared/decorator/public-resource.decorator';
 
 @Injectable()
-export class AuthGuard extends NestAuthGuard(['jwt']) {
+export class CustomAuthGuard extends NestAuthGuard(['jwt']) {
   constructor(private readonly reflector: Reflector) {
     super();
   }
@@ -34,3 +34,6 @@ export class AuthGuard extends NestAuthGuard(['jwt']) {
     return data;
   }
 }
+
+@Injectable()
+export class AuthGuard extends CustomAuthGuard {}

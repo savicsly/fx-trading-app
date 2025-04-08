@@ -35,4 +35,16 @@ export class OtpService {
 
     return otpEntity;
   }
+
+  async findOtpByUserId(userId: number): Promise<Otp | null> {
+    return this.otpRepository.findOne({ where: { userId } });
+  }
+
+  async updateOtp(otp: Otp): Promise<Otp> {
+    return this.otpRepository.save(otp);
+  }
+
+  generateOtpCode(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+  }
 }

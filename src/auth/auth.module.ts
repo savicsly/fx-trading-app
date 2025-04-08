@@ -32,5 +32,6 @@ import { JwtStrategy } from './strategy/jwt.strategy';
   ],
   providers: [AuthService, UsersService, UtilityService, JwtStrategy], // Provide JwtStrategy and HeaderApiKeyStrategy
   controllers: [AuthController],
+  exports: [AuthService],
 })
 export class AuthModule {}

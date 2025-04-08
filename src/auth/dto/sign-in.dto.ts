@@ -11,7 +11,7 @@ export class SignInDto {
   email: string;
 
   @IsNotEmpty({ message: 'Password is required' })
-  @ApiProperty({ example: '123456', description: 'Password of user' })
+  @ApiProperty({ example: '12345678', description: 'Password of user' })
   password: string;
 }
 

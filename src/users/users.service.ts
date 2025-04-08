@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { WalletService } from 'src/wallets/wallet.service';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 
@@ -12,6 +13,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private walletService: WalletService, // Inject WalletService
   ) {}
 
   async createUser(data: {
@@ -22,7 +24,13 @@ export class UsersService {
     password: string;
   }): Promise<User> {
     const user = this.usersRepository.create(data);
-    return this.usersRepository.save(user);
+    const savedUser = await this.usersRepository.save(user);
+
+    // Create a single wallet for the user
+    await this.walletService.createWallet(savedUser);
+    console.log(`Wallet created for user ID: ${savedUser.id}`);
+
+    return savedUser;
   }
 
   findAll(): Promise<User[]> {
@@ -68,9 +76,9 @@ export class UsersService {
     }
 
     user.emailVerifiedAt = new Date();
-
     await this.usersRepository.save(user);
 
+    console.log(`Email verified for user ID: ${id}`);
     return user;
   }
 
